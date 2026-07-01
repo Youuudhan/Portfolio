@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Yudhan Sharma — Inside My Sketchbook</title>
+<meta name="description" content="Yudhan Sharma's portfolio, reimagined as a hand-drawn 3D hallway you can walk through — projects, skills and a couple of doodled secrets included.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9C%8F%EF%B8%8F%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Patrick+Hand&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  /* ============ RESET & VARIABLES ============ */
+  *, *::before, *::after { box-sizing: border-box; }
+  :root{
+    --paper: #F4EDDD;
+    --paper-dim: #ece2c8;
+    --paper-card: #FAF5E8;
+    --ink: #2B2A28;
+    --ink-soft: #5b574d;
+    --rule-blue: #8CA9C4;
+    --coral: #E8632C;
+    --sage: #74936d;
+    --pencil-yellow: #F0B429;
+    --tape: #d9c9a3;
+    --shadow: rgba(43,42,40,0.20);
+    --display: 'Caveat', cursive;
+    --body-font: 'Patrick Hand', cursive;
+    --mono: 'Space Mono', monospace;
+  }
+  html{ scroll-behavior: auto; }
+  body{
+    margin:0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--body-font);
+    font-size: 19px;
+    line-height: 1.5;
+    overflow-x: hidden;
+    background-image: radial-gradient(circle, rgba(43,42,40,0.06) 1px, transparent 1.3px);
+    background-size: 22px 22px;
+  }
+  h1,h2,h3{ font-family: var(--display); font-weight:700; margin:0 0 .2em; color: var(--ink); }
+  a{ color: var(--ink); }
+  ::selection{ background: var(--pencil-yellow); color: var(--ink); }
+  :focus-visible{ outline: 3px solid var(--coral); outline-offset: 3px; border-radius: 4px; }
+
+  /* ============ LOADING SCREEN ============ */
+  #loading-screen{
+    position: fixed; inset:0; z-index: 200;
+    background: var(--paper);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap: 18px;
+    transition: opacity .6s ease, visibility .6s ease;
+  }
+  #loading-screen.hidden{ opacity:0; visibility:hidden; pointer-events:none; }
+  .pencil-spin{ width:64px; height:64px; }
+  .pencil-spin svg{ width:100%; height:100%; animation: spin 1.1s linear infinite; }
+  @keyframes spin{ to{ transform: rotate(360deg); } }
+  #loading-screen p{ font-family: var(--display); font-size: 1.6rem; margin:0; }
+
+  /* ============ 3D STAGE ============ */
+  #canvas-stage{ position: fixed; inset:0; z-index:0; }
+  #three-canvas{ width:100%; height:100%; display:block; }
+  body.no-webgl #canvas-stage{ display:none; }
+  body.no-webgl{ background: var(--paper); }
+
+  /* ============ SIDE NAV ============ */
+  .side-nav{
+    position: fixed; right: 22px; top:50%; transform: translateY(-50%);
+    z-index: 20;
+  }
+  .side-nav ul{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:14px; }
+  .side-nav a{
+    display:flex; align-items:center; gap:10px;
+    text-decoration:none; font-family: var(--mono); font-size:.72rem; letter-spacing:.04em;
+    color: var(--ink-soft);
+  }
+  .side-nav .dot{
+    width:11px; height:11px; border-radius:50%;
+    border: 2px solid var(--ink);
+    background: var(--paper);
+    transition: background .25s, transform .25s;
+    flex-shrink:0;
+  }
+  .side-nav a.active .dot{ background: var(--coral); transform: scale(1.3); }
+  .side-nav a.active{ color: var(--ink); font-weight:700; }
+  .side-nav .label{
+    background: var(--paper-card);
+    padding: 2px 8px;
+    border-radius: 3px 8px 3px 8px;
+    border: 1.5px solid transparent;
+  }
+  .side-nav a:hover .label, .side-nav a:focus-visible .label{ border-color: var(--ink); }
+
+  /* ============ SCROLL CONTENT ============ */
+  #scroll-content{ position: relative; z-index: 5; }
+  .stop{
+    min-height: 100vh;
+    display:flex; align-items:center;
+    padding: 8vh 8vw;
+    scroll-snap-align: start;
+  }
+  html{ scroll-snap-type: y proximity; }
+  .stop.align-left{ justify-content: flex-start; }
+  .stop.align-right{ justify-content: flex-end; }
+  .stop.cover{ justify-content:center; text-align:center; flex-direction:column; }
+
+  /* ============ COVER ============ */
+  .cover h1{ font-size: clamp(2.6rem, 8vw, 5rem); margin-bottom:.1em; }
+  .cover h1 span{ color: var(--coral); }
+  .cover .lead{ font-size: clamp(1.1rem, 2.4vw, 1.5rem); color: var(--ink-soft); max-width: 520px; margin: 0 auto; }
+  .cover .scroll-hint{
+    margin-top: 3.5rem; font-family: var(--mono); font-size:.85rem; letter-spacing:.05em;
+    color: var(--ink-soft); animation: bob 1.8s ease-in-out infinite;
+  }
+  .chevron{ display:block; font-size:1.4rem; }
+  @keyframes bob{ 0%,100%{ transform: translateY(0);} 50%{ transform: translateY(8px);} }
+  .secret .card{ text-align:center; }
+  .secret .signature{ font-family: var(--display); font-size:1.6rem; color: var(--coral); margin-top:1rem; }
+
+  /* ============ CARD ============ */
+  .card{
+    position:relative;
+    background: var(--paper-card);
+    max-width: 460px;
+    padding: 2.1rem 2.2rem 2.4rem;
+    border: 2.5px solid var(--ink);
+    border-radius: 3px 16px 4px 18px / 14px 4px 20px 3px;
+    box-shadow: 6px 8px 0 var(--shadow);
+    opacity:0; transform: translateY(30px) rotate(0deg);
+    transition: opacity .7s ease, transform .7s ease;
+  }
+  .card.wide{ max-width: 700px; }
+  .card.visible{ opacity:1; transform: translateY(0) rotate(var(--tilt, -1deg)); }
+  .align-left .card{ --tilt: -1.4deg; }
+  .align-right .card{ --tilt: 1.2deg; }
+  .card.center{ --tilt: 0deg; }
+  .card .tape{
+    position:absolute; top:-16px; left:38px; width:76px; height:26px;
+    background: var(--tape); opacity:.85; transform: rotate(-4deg);
+    box-shadow: 1px 1px 3px rgba(0,0,0,.15);
+  }
+  .card .eyebrow{
+    font-family: var(--mono); font-size:.72rem; letter-spacing:.08em; text-transform:uppercase;
+    color: var(--coral); margin:0 0 .4em;
+  }
+  .card h2{ font-size: 2.1rem; margin-bottom:.35em; }
+  .card p{ margin: 0 0 .8em; }
+  .card .meta{ font-size:.92rem; color: var(--ink-soft); border-top: 1.5px dashed var(--rule-blue); padding-top:.7em; margin-top:1em; }
+
+  .stamp-list{ list-style:none; margin: 1em 0 0; padding:0; display:flex; flex-wrap:wrap; gap:8px; }
+  .stamp-list li{
+    font-family: var(--mono); font-size:.72rem; padding: 4px 10px;
+    border: 1.5px solid var(--ink); border-radius: 3px 9px 3px 9px;
+    transform: rotate(-1.5deg);
+  }
+  .stamp-list li:nth-child(even){ transform: rotate(1.5deg); border-color: var(--sage); }
+
+  /* ============ PROJECTS ============ */
+  .project-grid{ display:grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; margin-top: 1.4rem; }
+  .project{
+    border: 2px solid var(--ink); border-radius: 4px 12px 4px 12px / 10px 4px 12px 4px;
+    padding: 1rem; background: var(--paper);
+  }
+  .project h3{ font-size:1.35rem; margin-bottom:.25em; }
+  .project p{ font-size:.88rem; margin-bottom:.6em; color: var(--ink-soft); }
+  .tags{ display:flex; flex-wrap:wrap; gap:6px; }
+  .tags span{
+    font-family: var(--mono); font-size:.65rem; padding:2px 7px;
+    background: var(--pencil-yellow); border:1.5px solid var(--ink); border-radius: 2px 7px 2px 7px;
+  }
+
+  /* ============ SKILLS ============ */
+  .skill-group{ margin-top:1.1rem; }
+  .skill-group h3{ font-size:1.2rem; margin-bottom:.35em; color: var(--sage); }
+  .skill-tags{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:.6rem; }
+  .skill-tags span{
+    font-family: var(--mono); font-size:.7rem; padding:3px 9px;
+    border: 1.5px solid var(--ink); border-radius: 3px 8px 3px 8px; background: var(--paper);
+  }
+
+  /* ============ TROPHIES ============ */
+  .ribbon-row{ display:flex; flex-wrap:wrap; gap:.9rem; margin-top:1rem; }
+  .ribbon{
+    display:flex; align-items:center; gap:8px; font-size:.85rem;
+    border: 1.5px dashed var(--coral); border-radius: 4px 10px 4px 10px; padding: 6px 10px;
+  }
+  .ribbon::before{ content:'🎗️'; font-size:1.1rem; }
+  .achieve-note{
+    margin-top:1.3rem; padding:.9rem 1rem; background: var(--pencil-yellow);
+    border: 2px solid var(--ink); border-radius: 3px 12px 3px 12px; font-size:.92rem;
+    transform: rotate(-1deg);
+  }
+
+  /* ============ CONTACT ============ */
+  .contact-links{ list-style:none; margin:1.1rem 0 0; padding:0; display:flex; flex-direction:column; gap:.6rem; }
+  .contact-links a{
+    text-decoration:none; font-size:1.1rem; display:inline-flex; align-items:center; gap:8px;
+    border-bottom: 2px solid transparent; width:fit-content;
+  }
+  .contact-links a:hover, .contact-links a:focus-visible{ border-color: var(--coral); }
+  .contact-links .ico{ font-size:1.2rem; }
+  .lang-note{ margin-top:1.2rem; font-family: var(--mono); font-size:.8rem; color: var(--ink-soft); }
+
+  /* ============ EASTER EGG TOAST ============ */
+  #egg-popup{
+    position: fixed; bottom: 26px; left:50%;
+    transform: translateX(-50%) translateY(24px);
+    opacity:0; pointer-events:none;
+    background: var(--pencil-yellow); border:2.5px solid var(--ink);
+    border-radius: 4px 14px 4px 14px; padding: .7rem 1.2rem;
+    font-family: var(--display); font-size:1.2rem; max-width: 88vw; text-align:center;
+    box-shadow: 4px 5px 0 var(--shadow);
+    transition: opacity .3s ease, transform .3s ease;
+    z-index: 40;
+  }
+  #egg-popup.show{ opacity:1; transform: translateX(-50%) translateY(0); }
+
+  /* ============ NOSCRIPT ============ */
+  .noscript-note{ max-width:600px; margin:4rem auto; padding:1.5rem; border:2px solid var(--ink); text-align:center; }
+
+  /* ============ RESPONSIVE ============ */
+  @media (max-width: 780px){
+    .project-grid{ grid-template-columns: 1fr; }
+    .card{ max-width: 92vw; padding: 1.5rem 1.4rem 1.8rem; }
+    .card.wide{ max-width: 92vw; }
+    .stop{ padding: 8vh 5vw; }
+  }
+  @media (max-width: 640px){
+    .side-nav{ right: 8px; }
+    .side-nav .label{ display:none; }
+    .side-nav ul{ gap:12px; }
+  }
+
+  /* ============ REDUCED MOTION ============ */
+  @media (prefers-reduced-motion: reduce){
+    .card{ transition: opacity .3s linear; }
+    .cover .scroll-hint{ animation: none; }
+    .pencil-spin svg{ animation: none; }
+  }
+</style>
+</head>
+<body>
+
+  <div id="loading-screen" role="status" aria-live="polite">
+    <div class="pencil-spin" aria-hidden="true">
+      <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="50" r="38" stroke="#2B2A28" stroke-width="6" stroke-linecap="round" stroke-dasharray="70 179"/>
+      </svg>
+    </div>
+    <p>sharpening pencils…</p>
+  </div>
+
+  <div id="canvas-stage" aria-hidden="true">
+    <canvas id="three-canvas"></canvas>
+  </div>
+
+  <nav class="side-nav" aria-label="Sketchbook sections">
+    <ul>
+      <li><a href="#start" data-target="cover" class="active"><span class="dot"></span><span class="label">Start</span></a></li>
+      <li><a href="#origin" data-target="origin"><span class="dot"></span><span class="label">Origin</span></a></li>
+      <li><a href="#workshop" data-target="workshop"><span class="dot"></span><span class="label">Workshop</span></a></li>
+      <li><a href="#toolbox" data-target="toolbox"><span class="dot"></span><span class="label">Toolbox</span></a></li>
+      <li><a href="#trophies" data-target="trophies"><span class="dot"></span><span class="label">Trophies</span></a></li>
+      <li><a href="#contact" data-target="contact"><span class="dot"></span><span class="label">Say Hi</span></a></li>
+    </ul>
+  </nav>
+
+  <main id="scroll-content">
+
+    <section class="stop cover" id="start" data-section="cover">
+      <h1>Hi, I'm <span>Yudhan.</span></h1>
+      <p class="lead">You've just stepped inside my sketchbook — a Computer Science grad, code tinkerer, and doodler of small robots.</p>
+      <p class="scroll-hint"><span class="chevron">↓</span>scroll to start walking</p>
+    </section>
+
+    <section class="stop align-left" id="origin" data-section="origin">
+      <article class="card">
+        <span class="tape" aria-hidden="true"></span>
+        <p class="eyebrow">01 · Where it started</p>
+        <h2>Origin story</h2>
+        <p>Somewhere between graph-paper margins and glowing terminal windows, I found out I liked making things that actually work. A few years at Geetanjali Institute of Technical Studies later, I walked out with a Computer Science degree — and a habit of turning every idea into a little program first, and a plan second.</p>
+        <p class="meta">B.Tech · Computer Science &amp; Engineering<br>Geetanjali Institute of Technical Studies, Udaipur — Class of 2026</p>
+        <ul class="stamp-list">
+          <li>Web Dev</li><li>Open Source</li><li>Competitive Programming</li><li>Artificial Intelligence</li>
+        </ul>
+      </article>
+    </section>
+
+    <section class="stop align-right" id="workshop" data-section="workshop">
+      <article class="card wide">
+        <span class="tape" aria-hidden="true"></span>
+        <p class="eyebrow">02 · The workshop</p>
+        <h2>Things I've built</h2>
+        <p>Three little machines so far. Not perfect — just proof I can take an idea from a blank file to a working thing.</p>
+        <div class="project-grid">
+          <div class="project">
+            <h3>Student Management System</h3>
+            <p>A console app for wrangling student records — add, update, delete, search, and save it all to a file so nothing's lost when the terminal closes.</p>
+            <div class="tags"><span>Python</span><span>File Handling</span></div>
+          </div>
+          <div class="project">
+            <h3>Personal Portfolio Website</h3>
+            <p>My first portfolio, built the honest way — raw HTML and CSS, no frameworks, just a clean responsive layout to show my work.</p>
+            <div class="tags"><span>HTML5</span><span>CSS3</span></div>
+          </div>
+          <div class="project">
+            <h3>Library Management System</h3>
+            <p>A menu-driven library manager with proper OOP bones — books, users and borrowing, all organized into tidy little classes.</p>
+            <div class="tags"><span>C++</span><span>OOP</span></div>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="stop align-left" id="toolbox" data-section="toolbox">
+      <article class="card">
+        <span class="tape" aria-hidden="true"></span>
+        <p class="eyebrow">03 · The toolbox</p>
+        <h2>What I reach for</h2>
+        <p>The tools hanging right where I can find them.</p>
+        <div class="skill-group">
+          <h3>Languages</h3>
+          <div class="skill-tags"><span>Python</span><span>C</span><span>C++</span></div>
+        </div>
+        <div class="skill-group">
+          <h3>Web</h3>
+          <div class="skill-tags"><span>HTML5</span><span>CSS3</span><span>JavaScript (basics)</span></div>
+        </div>
+        <div class="skill-group">
+          <h3>Foundations</h3>
+          <div class="skill-tags"><span>DSA</span><span>OOP</span><span>DBMS</span><span>Operating Systems</span><span>Computer Networks</span><span>Software Engineering</span></div>
+        </div>
+        <div class="skill-group">
+          <h3>Kit</h3>
+          <div class="skill-tags"><span>Git &amp; GitHub</span><span>VS Code</span><span>Code::Blocks</span><span>Jupyter Notebook</span><span>MS Office</span></div>
+        </div>
+      </article>
+    </section>
+
+    <section class="stop align-right" id="trophies" data-section="trophies">
+      <article class="card">
+        <span class="tape" aria-hidden="true"></span>
+        <p class="eyebrow">04 · Trophy shelf</p>
+        <h2>Small wins, but mine</h2>
+        <div class="ribbon-row">
+          <span class="ribbon">Python Programming Fundamentals</span>
+          <span class="ribbon">Introduction to C++ Programming</span>
+          <span class="ribbon">HTML &amp; CSS for Web Development</span>
+          <span class="ribbon">Git &amp; GitHub Essentials</span>
+        </div>
+        <p class="achieve-note">Kept practicing, kept shipping small projects, showed up to workshops. Slow and steady beats scrolling.</p>
+      </article>
+    </section>
+
+    <section class="stop align-left" id="contact" data-section="contact">
+      <article class="card">
+        <span class="tape" aria-hidden="true"></span>
+        <p class="eyebrow">05 · Say hi</p>
+        <h2>Let's build something</h2>
+        <p>I'm always up for talking code, swapping project ideas, or hearing about the bug you finally squashed at 2am. Based in Rajasthan, India — reachable anywhere by internet.</p>
+        <ul class="contact-links">
+          <li><a href="mailto:yudhan.sharma.official@gmail.com"><span class="ico">✉️</span>yudhan.sharma.official@gmail.com</a></li>
+          <li><a href="https://github.com/yudhansharma" target="_blank" rel="noopener noreferrer"><span class="ico">🐙</span>github.com/yudhansharma</a></li>
+          <li><a href="https://linkedin.com/in/yudhansharma" target="_blank" rel="noopener noreferrer"><span class="ico">💼</span>linkedin.com/in/yudhansharma</a></li>
+        </ul>
+        <p class="lang-note">speaks: English · Hindi</p>
+      </article>
+    </section>
+
+    <section class="stop cover secret" id="secret" data-section="secret">
+      <article class="card center">
+        <p class="eyebrow">🏆 secret room</p>
+        <h2>You made it to the end of the hallway</h2>
+        <p>Achievement unlocked. Fun fact: I'd rather stare down a stubborn segfault at 1am than leave a bug unsolved overnight. If you're into competitive programming too — I'll race you to the next problem.</p>
+        <p class="signature">— Yudhan</p>
+      </article>
+    </section>
+
+  </main>
+
+  <div id="egg-popup" role="status" aria-live="polite"></div>
+
+  <noscript>
+    <div class="noscript-note">
+      <h2>Yudhan Sharma</h2>
+      <p>This portfolio is built as an interactive 3D sketchbook and needs JavaScript to walk you through it. In short: Computer Science graduate (GITS, Udaipur, 2026), builder of Python/C++ projects, reachable at yudhan.sharma.official@gmail.com.</p>
+    </div>
+  </noscript>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  /* ================================================================
+     0. PALETTE + CONFIG
+  ================================================================= */
+  var PAPER = '#F4EDDD';
+  var PAPER_CARD = '#FAF5E8';
+  var INK = '#2B2A28';
+  var RULE_BLUE = '#8CA9C4';
+  var CORAL = '#E8632C';
+  var SAGE = '#74936d';
+  var YELLOW = '#F0B429';
+  var WOOD = '#8B5E3C';
+
+  var CORRIDOR_WIDTH = 6;
+  var WALL_HEIGHT = 4.4;
+  var SPACING = 32;
+  var SECTIONS = [
+    { id:'cover',    z: 0,           side: 0 },
+    { id:'origin',   z: -SPACING*1,  side: -1 },
+    { id:'workshop', z: -SPACING*2,  side: 1 },
+    { id:'toolbox',  z: -SPACING*3,  side: -1 },
+    { id:'trophies', z: -SPACING*4,  side: 1 },
+    { id:'contact',  z: -SPACING*5,  side: -1 },
+    { id:'secret',   z: -SPACING*6,  side: 0 }
+  ];
+  var NUM_GAPS = SECTIONS.length - 1;
+  var HALLWAY_LENGTH = SPACING * NUM_GAPS;
+  var DOOR_Z = -(HALLWAY_LENGTH + 10);
+  var EYE_HEIGHT = 1.7;
+
+  var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var isTouch = window.matchMedia('(pointer: coarse)').matches;
+
+  /* ================================================================
+     1. SKETCHY CANVAS HELPERS
+  ================================================================= */
+  function jitter(v, amt){ return v + (Math.random() - 0.5) * amt; }
+
+  function sketchyLine(ctx, x1, y1, x2, y2, opts){
+    opts = opts || {};
+    var wobble = opts.wobble != null ? opts.wobble : 1.5;
+    var passes = opts.passes != null ? opts.passes : 2;
+    var color = opts.color || INK;
+    var width = opts.width != null ? opts.width : 2;
+    var segments = opts.segments || 8;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    for (var p = 0; p < passes; p++){
+      ctx.beginPath();
+      for (var i = 0; i <= segments; i++){
+        var t = i / segments;
+        var x = x1 + (x2 - x1) * t + jitter(0, wobble);
+        var y = y1 + (y2 - y1) * t + jitter(0, wobble);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+  }
+
+  function sketchyRect(ctx, x, y, w, h, opts){
+    opts = opts || {};
+    var o = opts.overshoot != null ? opts.overshoot : 3;
+    sketchyLine(ctx, x - o, y, x + w + o, y, opts);
+    sketchyLine(ctx, x + w, y - o, x + w, y + h + o, opts);
+    sketchyLine(ctx, x + w + o, y + h, x - o, y + h, opts);
+    sketchyLine(ctx, x, y + h + o, x, y - o, opts);
+  }
+
+  function sketchyCircle(ctx, cx, cy, r, opts){
+    opts = opts || {};
+    var wobble = opts.wobble != null ? opts.wobble : 1.4;
+    var passes = opts.passes != null ? opts.passes : 2;
+    var color = opts.color || INK;
+    var width = opts.width != null ? opts.width : 2;
+    var segments = opts.segments || 28;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    for (var p = 0; p < passes; p++){
+      ctx.beginPath();
+      for (var i = 0; i <= segments; i++){
+        var t = (i / segments) * Math.PI * 2;
+        var rr = r + jitter(0, wobble);
+        var x = cx + Math.cos(t) * rr;
+        var y = cy + Math.sin(t) * rr;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+  }
+
+  function paperGrain(ctx, w, h, color){
+    ctx.save();
+    ctx.globalAlpha = 0.05;
+    for (var i = 0; i < 900; i++){
+      ctx.fillStyle = Math.random() > 0.5 ? INK : (color || RULE_BLUE);
+      ctx.fillRect(Math.random() * w, Math.random() * h, 1, 1);
+    }
+    ctx.restore();
+  }
+
+  function makeCanvas(w, h){
+    var c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    return c;
+  }
+
+  function loadFont(px, family){
+    try { document.fonts.load(px + ' ' + family); } catch(e){}
+  }
+
+  /* ================================================================
+     2. MINI DOODLES (drawn at a given origin, small scale)
+  ================================================================= */
+  function doodleStar(ctx, x, y, s){
+    ctx.save(); ctx.translate(x, y);
+    var pts = [];
+    for (var i = 0; i < 10; i++){
+      var ang = (Math.PI / 5) * i - Math.PI / 2;
+      var rad = i % 2 === 0 ? s : s * 0.45;
+      pts.push([Math.cos(ang) * rad, Math.sin(ang) * rad]);
+    }
+    ctx.strokeStyle = CORAL; ctx.lineWidth = 1.6; ctx.beginPath();
+    for (var j = 0; j < pts.length; j++){
+      var px = jitter(pts[j][0], 1), py = jitter(pts[j][1], 1);
+      if (j === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.closePath(); ctx.stroke(); ctx.restore();
+  }
+
+  function doodleSpiral(ctx, x, y, s){
+    ctx.save(); ctx.translate(x, y);
+    ctx.strokeStyle = SAGE; ctx.lineWidth = 1.5; ctx.beginPath();
+    for (var a = 0; a < Math.PI * 5; a += 0.25){
+      var r = (a / (Math.PI * 5)) * s;
+      var px = Math.cos(a) * r, py = Math.sin(a) * r;
+      if (a === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.stroke(); ctx.restore();
+  }
+
+  function doodleArrowSquiggle(ctx, x, y, s){
+    ctx.save(); ctx.translate(x, y);
+    sketchyLine(ctx, -s, 0, s, jitter(0,3), { color: RULE_BLUE, width: 1.4, wobble: 3, segments: 6 });
+    sketchyLine(ctx, s - 5, -5, s, 0, { color: RULE_BLUE, width: 1.4, wobble: 1 });
+    sketchyLine(ctx, s - 5, 5, s, 0, { color: RULE_BLUE, width: 1.4, wobble: 1 });
+    ctx.restore();
+  }
+
+  function randomMargin(ctx, x, y){
+    var pick = Math.floor(Math.random() * 3);
+    if (pick === 0) doodleStar(ctx, x, y, 8 + Math.random()*4);
+    else if (pick === 1) doodleSpiral(ctx, x, y, 9 + Math.random()*4);
+    else doodleArrowSquiggle(ctx, x, y, 12);
+  }
+
+  /* ================================================================
+     3. BIG TEXTURES: wall / floor
+  ================================================================= */
+  function makeWallTexture(){
+    var w = 512, h = 1024;
+    var c = makeCanvas(w, h);
+    var ctx = c.getContext('2d');
+    ctx.fillStyle = PAPER; ctx.fillRect(0, 0, w, h);
+    paperGrain(ctx, w, h);
+    for (var y = 46; y < h; y += 46){
+      sketchyLine(ctx, 26, y, w - 20, y, { wobble: 1.6, passes: 1, color: RULE_BLUE, width: 1.4, segments: 10 });
+    }
+    sketchyLine(ctx, 58, 0, 58, h, { wobble: 1.8, passes: 1, color: '#D98C7A', width: 1.6, segments: 20 });
+    for (var yy = 130; yy < h; yy += 300){
+      randomMargin(ctx, 34, yy);
+    }
+    var tex = new THREE.CanvasTexture(c);
+    tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+    return tex;
+  }
+
+  function makeFloorTexture(){
+    var w = 256, h = 1024;
+    var c = makeCanvas(w, h);
+    var ctx = c.getContext('2d');
+    ctx.fillStyle = '#ECE0C4'; ctx.fillRect(0, 0, w, h);
+    paperGrain(ctx, w, h);
+    ctx.strokeStyle = 'rgba(140,169,196,0.35)'; ctx.lineWidth = 1;
+    for (var gx = 0; gx <= w; gx += 26){
+      ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, h); ctx.stroke();
+    }
+    for (var gy = 0; gy <= h; gy += 26){
+      ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(w, gy); ctx.stroke();
+    }
+    ctx.strokeStyle = INK; ctx.lineWidth = 2.4; ctx.setLineDash([14, 12]);
+    ctx.beginPath(); ctx.moveTo(w/2, 0); ctx.lineTo(w/2, h); ctx.stroke();
+    ctx.setLineDash([]);
+    var tex = new THREE.CanvasTexture(c);
+    tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+    return tex;
+  }
+
+  /* ================================================================
+     4. ICON DOODLE TEXTURES (transparent background, small planes)
+  ================================================================= */
+  function makeIconTexture(size, drawFn){
+    var c = makeCanvas(size, size);
+    var ctx = c.getContext('2d');
+    ctx.clearRect(0, 0, size, size);
+    drawFn(ctx, size);
+    var tex = new THREE.CanvasTexture(c);
+    tex.needsUpdate = true;
+    return tex;
+  }
+
+  function iconCoffeeCup(ctx, s){
+    sketchyRect(ctx, s*0.28, s*0.4, s*0.4, s*0.35, { wobble:1.2, color: INK, width:2 });
+    sketchyCircle(ctx, s*0.78, s*0.5, s*0.09, { wobble:1, color: INK, width:1.8, segments:14 });
+    ctx.strokeStyle = INK; ctx.lineWidth = 1.4;
+    for (var i=0;i<3;i++){
+      ctx.beginPath();
+      var bx = s*0.35 + i*s*0.1;
+      ctx.moveTo(bx, s*0.36); ctx.quadraticCurveTo(bx+6, s*0.24, bx, s*0.14);
+      ctx.stroke();
+    }
+  }
+
+  function iconSpider(ctx, s){
+    sketchyLine(ctx, s*0.5, 0, s*0.5, s*0.28, { wobble:0.5, passes:1, color: INK, width:1.2, segments:4 });
+    sketchyCircle(ctx, s*0.5, s*0.36, s*0.1, { wobble:1, color: INK, width:2, segments:14 });
+    sketchyCircle(ctx, s*0.5, s*0.5, s*0.14, { wobble:1.2, color: INK, width:2, segments:16 });
+    for (var i=0;i<4;i++){
+      var ang = (i/4)*Math.PI*0.8 + 0.3;
+      sketchyLine(ctx, s*0.5, s*0.5, s*0.5 - Math.cos(ang)*s*0.24, s*0.5 + Math.sin(ang)*s*0.2, { wobble:1.4, passes:1, width:1.4, segments:3 });
+      sketchyLine(ctx, s*0.5, s*0.5, s*0.5 + Math.cos(ang)*s*0.24, s*0.5 + Math.sin(ang)*s*0.2, { wobble:1.4, passes:1, width:1.4, segments:3 });
+    }
+  }
+
+  function iconAirplane(ctx, s){
+    ctx.save();
+    ctx.strokeStyle = INK; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(s*0.1, s*0.65); ctx.lineTo(s*0.85, s*0.35);
+    ctx.lineTo(s*0.55, s*0.42); ctx.lineTo(s*0.42, s*0.75);
+    ctx.lineTo(s*0.35, s*0.55); ctx.lineTo(s*0.1, s*0.65);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function iconGitBranch(ctx, s){
+    sketchyCircle(ctx, s*0.28, s*0.22, s*0.06, { wobble:0.8, color: SAGE, width:2, segments:12 });
+    sketchyCircle(ctx, s*0.28, s*0.78, s*0.06, { wobble:0.8, color: SAGE, width:2, segments:12 });
+    sketchyCircle(ctx, s*0.72, s*0.5, s*0.06, { wobble:0.8, color: CORAL, width:2, segments:12 });
+    sketchyLine(ctx, s*0.28, s*0.28, s*0.28, s*0.72, { wobble:1, passes:1, color: INK, width:1.6, segments:8 });
+    sketchyLine(ctx, s*0.28, s*0.5, s*0.66, s*0.5, { wobble:1, passes:1, color: INK, width:1.6, segments:8 });
+  }
+
+  function iconTerminal(ctx, s){
+    sketchyRect(ctx, s*0.15, s*0.2, s*0.7, s*0.6, { wobble:1, color: INK, width:2 });
+    ctx.strokeStyle = SAGE; ctx.lineWidth = 2; ctx.beginPath();
+    ctx.moveTo(s*0.26, s*0.4); ctx.lineTo(s*0.4, s*0.5); ctx.lineTo(s*0.26, s*0.6); ctx.stroke();
+    sketchyLine(ctx, s*0.45, s*0.6, s*0.65, s*0.6, { wobble:0.6, passes:1, width:2, segments:4 });
+  }
+
+  function iconBrowser(ctx, s){
+    sketchyRect(ctx, s*0.14, s*0.22, s*0.72, s*0.56, { wobble:1, color: INK, width:2 });
+    sketchyLine(ctx, s*0.14, s*0.34, s*0.86, s*0.34, { wobble:0.6, passes:1, width:1.6, segments:8 });
+    for (var i=0;i<3;i++){ sketchyCircle(ctx, s*0.2+i*s*0.06, s*0.28, s*0.015, { wobble:0.3, color: CORAL, width:1.5, segments:8 }); }
+  }
+
+  function iconBook(ctx, s){
+    sketchyLine(ctx, s*0.5, s*0.2, s*0.5, s*0.78, { wobble:0.8, passes:1, width:1.8, segments:8 });
+    sketchyRect(ctx, s*0.16, s*0.2, s*0.34, s*0.58, { wobble:1, color: INK, width:1.8 });
+    sketchyRect(ctx, s*0.5, s*0.2, s*0.34, s*0.58, { wobble:1, color: INK, width:1.8 });
+  }
+
+  function iconWrench(ctx, s){
+    ctx.save(); ctx.translate(s*0.5, s*0.5); ctx.rotate(-0.6);
+    sketchyRect(ctx, -s*0.05, -s*0.32, s*0.1, s*0.5, { wobble:1, color: INK, width:2 });
+    sketchyCircle(ctx, 0, -s*0.36, s*0.14, { wobble:1, color: INK, width:2, segments:16 });
+    ctx.restore();
+  }
+
+  function iconDb(ctx, s){
+    sketchyCircle(ctx, s*0.5, s*0.28, s*0.24, { wobble:1, color: INK, width:2, segments:20 });
+    sketchyLine(ctx, s*0.26, s*0.28, s*0.26, s*0.68, { wobble:0.8, passes:1, width:1.8, segments:8 });
+    sketchyLine(ctx, s*0.74, s*0.28, s*0.74, s*0.68, { wobble:0.8, passes:1, width:1.8, segments:8 });
+    sketchyCircle(ctx, s*0.5, s*0.68, s*0.24, { wobble:1, color: INK, width:2, segments:20 });
+  }
+
+  function iconFolder(ctx, s){
+    sketchyLine(ctx, s*0.16, s*0.32, s*0.4, s*0.32, { wobble:0.6, passes:1, width:2, segments:4 });
+    sketchyLine(ctx, s*0.4, s*0.32, s*0.46, s*0.24, { wobble:0.6, passes:1, width:2, segments:4 });
+    sketchyRect(ctx, s*0.16, s*0.32, s*0.68, s*0.42, { wobble:1, color: INK, width:2 });
+  }
+
+  /* ================================================================
+     5. NIB'S FACE TEXTURES (open / closed eyes)
+  ================================================================= */
+  function makeFaceTexture(closed){
+    var s = 128;
+    var c = makeCanvas(s, s);
+    var ctx = c.getContext('2d');
+    ctx.clearRect(0,0,s,s);
+    ctx.strokeStyle = INK; ctx.lineWidth = 4; ctx.lineCap = 'round';
+    if (!closed){
+      sketchyCircle(ctx, s*0.36, s*0.45, s*0.07, { wobble:0.6, color: INK, width:3, segments:12, passes:1 });
+      sketchyCircle(ctx, s*0.64, s*0.45, s*0.07, { wobble:0.6, color: INK, width:3, segments:12, passes:1 });
+      ctx.beginPath(); ctx.arc(s*0.36, s*0.45, s*0.028, 0, Math.PI*2); ctx.fillStyle = INK; ctx.fill();
+      ctx.beginPath(); ctx.arc(s*0.64, s*0.45, s*0.028, 0, Math.PI*2); ctx.fill();
+    } else {
+      ctx.beginPath(); ctx.moveTo(s*0.29, s*0.45); ctx.quadraticCurveTo(s*0.36, s*0.38, s*0.43, s*0.45); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(s*0.57, s*0.45); ctx.quadraticCurveTo(s*0.64, s*0.38, s*0.71, s*0.45); ctx.stroke();
+    }
+    ctx.beginPath(); ctx.moveTo(s*0.4, s*0.64); ctx.quadraticCurveTo(s*0.5, s*0.72, s*0.6, s*0.64); ctx.lineWidth=3; ctx.stroke();
+    var tex = new THREE.CanvasTexture(c);
+    return tex;
+  }
+
+  function makePanelTexture(title, drawFn){
+    var w = 512, h = 384;
+    var c = makeCanvas(w, h);
+    var ctx = c.getContext('2d');
+    ctx.fillStyle = PAPER_CARD; ctx.fillRect(0,0,w,h);
+    paperGrain(ctx, w, h);
+    sketchyRect(ctx, 14, 14, w-28, h-28, { wobble:2, color: INK, width:3, passes:1 });
+    if (drawFn) drawFn(ctx, w, h);
+    var tex = new THREE.CanvasTexture(c);
+    return tex;
+  }
+
+  /* ================================================================
+     6. THREE.JS SETUP
+  ================================================================= */
+  var canvasEl = document.getElementById('three-canvas');
+  var scene, camera, renderer, clock;
+  var raycaster, mouseVec;
+  var clickableObjects = [];
+  var nib, nibFace, nibFaceMat, openTex, closedTex;
+  var nibIndex = 1;
+  var nibPos = { x: 0, z: 6 };
+  var blinkState = { timer:0, next: 2 + Math.random()*3, blinking:false, elapsed:0 };
+  var mouseNX = 0, mouseNY = 0;
+  var doorGroup, doorPanel, doorOpened = false;
+  var flyingProps = [];
+  var welcomeShown = false;
+
+  function hasWebGL(){
+    try{
+      var c = document.createElement('canvas');
+      return !!(window.WebGLRenderingContext && (c.getContext('webgl') || c.getContext('experimental-webgl')));
+    } catch(e){ return false; }
+  }
+
+  function makeFramedPanel(width, height, texture, opts){
+    opts = opts || {};
+    var group = new THREE.Group();
+    var backGeo = new THREE.PlaneGeometry(width, height);
+    var backMat = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
+    var back = new THREE.Mesh(backGeo, backMat);
+    group.add(back);
+
+    var frameColor = opts.frameColor || WOOD;
+    var t = 0.16, d = 0.1;
+    var frameMat = new THREE.MeshBasicMaterial({ color: frameColor });
+    function strip(w, h, x, y){
+      var geo = new THREE.BoxGeometry(w, h, d);
+      var m = new THREE.Mesh(geo, frameMat);
+      m.position.set(x, y, 0.06);
+      var edges = new THREE.EdgesGeometry(geo);
+      var line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: INK }));
+      m.add(line);
+      group.add(m);
+    }
+    strip(width + t*2, t, 0, height/2 + t/2);
+    strip(width + t*2, t, 0, -height/2 - t/2);
+    strip(t, height, width/2 + t/2, 0);
+    strip(t, height, -width/2 - t/2, 0);
+
+    return group;
+  }
+
+  function makeIconPlane(size, drawFn, opts){
+    opts = opts || {};
+    var tex = makeIconTexture(160, drawFn);
+    var geo = new THREE.PlaneGeometry(size, size);
+    var mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide, depthWrite: false });
+    var mesh = new THREE.Mesh(geo, mat);
+    if (opts.message){
+      mesh.userData.message = opts.message;
+      clickableObjects.push(mesh);
+    }
+    if (opts.flyAway) mesh.userData.flyAway = true;
+    return mesh;
+  }
+
+  function buildScene(){
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(PAPER);
+    scene.fog = new THREE.Fog(PAPER, 16, 92);
+
+    camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.1, 115);
+    camera.rotation.order = 'YXZ';
+    camera.position.set(0, EYE_HEIGHT, 4);
+
+    renderer = new THREE.WebGLRenderer({ canvas: canvasEl, antialias: true, alpha: false });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    raycaster = new THREE.Raycaster();
+    mouseVec = new THREE.Vector2();
+
+    /* ---- corridor shell ---- */
+    var wallTex = makeWallTexture();
+    wallTex.repeat.set(1, (HALLWAY_LENGTH + 40) / 9);
+    var floorTex = makeFloorTexture();
+    floorTex.repeat.set(1, (HALLWAY_LENGTH + 40) / 9);
+
+    var wallZLen = HALLWAY_LENGTH + 40;
+    var wallZCenter = 5 - wallZLen / 2;
+
+    var wallMat = new THREE.MeshBasicMaterial({ map: wallTex, side: THREE.DoubleSide });
+    var leftWall = new THREE.Mesh(new THREE.PlaneGeometry(wallZLen, WALL_HEIGHT), wallMat);
+    leftWall.rotation.y = Math.PI / 2;
+    leftWall.position.set(-CORRIDOR_WIDTH/2, WALL_HEIGHT/2, wallZCenter);
+    scene.add(leftWall);
+
+    var rightWall = new THREE.Mesh(new THREE.PlaneGeometry(wallZLen, WALL_HEIGHT), wallMat.clone());
+    rightWall.rotation.y = -Math.PI / 2;
+    rightWall.position.set(CORRIDOR_WIDTH/2, WALL_HEIGHT/2, wallZCenter);
+    scene.add(rightWall);
+
+    var floorMat = new THREE.MeshBasicMaterial({ map: floorTex });
+    var floor = new THREE.Mesh(new THREE.PlaneGeometry(CORRIDOR_WIDTH + 1, wallZLen), floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.set(0, 0, wallZCenter);
+    scene.add(floor);
+
+    /* ---- alcove panels ---- */
+    var panelY = 2.0;
+    var panelInset = CORRIDOR_WIDTH/2 - 0.05;
+
+    function placePanel(group, sectionZ, side){
+      group.rotation.y = side === -1 ? Math.PI/2 : -Math.PI/2;
+      group.position.set(side * panelInset, panelY, sectionZ);
+      scene.add(group);
+    }
+
+    // Origin — diploma
+    var diplomaTex = makePanelTexture('origin', function(ctx, w, h){
+      ctx.save();
+      ctx.translate(w/2, h/2);
+      sketchyRect(ctx, -150, -90, 300, 180, { wobble:2, color: CORAL, width:2, passes:1 });
+      ctx.font = '46px Caveat, cursive';
+      ctx.fillStyle = INK; ctx.textAlign = 'center';
+      ctx.fillText('B.Tech · CSE', 0, -20);
+      ctx.font = '24px "Patrick Hand", cursive';
+      ctx.fillText('Geetanjali Institute of', 0, 16);
+      ctx.fillText('Technical Studies · 2026', 0, 44);
+      sketchyCircle(ctx, 118, 66, 22, { wobble:1.5, color: CORAL, width:2, segments:20 });
+      ctx.restore();
+    });
+    var originPanel = makeFramedPanel(3.4, 2.4, diplomaTex);
+    placePanel(originPanel, SECTIONS[1].z, SECTIONS[1].side);
+    var books = new THREE.Group();
+    var bookColors = [CORAL, SAGE, YELLOW];
+    for (var bi=0; bi<3; bi++){
+      var bGeo = new THREE.BoxGeometry(0.6, 0.16, 0.42);
+      var bMesh = new THREE.Mesh(bGeo, new THREE.MeshBasicMaterial({ color: bookColors[bi] }));
+      bMesh.position.set(SECTIONS[1].side * (panelInset - 0.4), 0.08 + bi*0.17, SECTIONS[1].z + 0.9 - bi*0.05);
+      bMesh.rotation.y = 0.08 * bi;
+      var be = new THREE.LineSegments(new THREE.EdgesGeometry(bGeo), new THREE.LineBasicMaterial({ color: INK }));
+      bMesh.add(be);
+      scene.add(bMesh);
+    }
+
+    // Workshop — corkboard with 3 pinned cards
+    var corkTex = makePanelTexture('workshop', function(ctx, w, h){
+      ctx.save();
+      ctx.fillStyle = 'rgba(139,94,60,0.12)';
+      ctx.fillRect(30, 30, w-60, h-60);
+      for (var i=0;i<40;i++){
+        ctx.beginPath();
+        ctx.fillStyle = 'rgba(139,94,60,0.25)';
+        ctx.arc(40 + Math.random()*(w-80), 40 + Math.random()*(h-80), 1.4, 0, Math.PI*2);
+        ctx.fill();
+      }
+      ctx.font = '30px Caveat, cursive';
+      ctx.fillStyle = INK; ctx.textAlign='center';
+      ctx.fillText('the workshop', w/2, 56);
+      ctx.restore();
+    });
+    var workshopPanel = makeFramedPanel(4.4, 2.6, corkTex);
+    placePanel(workshopPanel, SECTIONS[2].z, SECTIONS[2].side);
+    var cardIcons = [iconTerminal, iconBrowser, iconBook];
+    var cardMsgs = ['Student Management System — Python + file handling', 'Personal Portfolio Website — HTML & CSS', 'Library Management System — C++ & OOP'];
+    for (var ci=0; ci<3; ci++){
+      var iconPlane = makeIconPlane(0.7, cardIcons[ci], { message: cardMsgs[ci] });
+      var localX = (ci - 1) * 1.3;
+      var offset = new THREE.Vector3(localX, 0, 0.12);
+      offset.applyAxisAngle(new THREE.Vector3(0,1,0), workshopPanel.rotation.y);
+      iconPlane.position.set(workshopPanel.position.x + offset.x, panelY + 0.1, workshopPanel.position.z + offset.z);
+      iconPlane.rotation.y = workshopPanel.rotation.y;
+      scene.add(iconPlane);
+      var pin = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), new THREE.MeshBasicMaterial({ color: CORAL }));
+      pin.position.set(iconPlane.position.x, iconPlane.position.y + 0.4, iconPlane.position.z);
+      scene.add(pin);
+    }
+
+    // Toolbox — pegboard
+    var pegTex = makePanelTexture('toolbox', function(ctx, w, h){
+      ctx.save();
+      ctx.fillStyle = 'rgba(43,42,40,0.08)';
+      for (var py=50; py<h-30; py+=42){
+        for (var px=50; px<w-30; px+=42){
+          ctx.beginPath(); ctx.arc(px, py, 3, 0, Math.PI*2); ctx.fill();
+        }
+      }
+      ctx.font = '30px Caveat, cursive'; ctx.fillStyle = INK; ctx.textAlign='center';
+      ctx.fillText('the toolbox', w/2, 50);
+      ctx.restore();
+    });
+    var toolboxPanel = makeFramedPanel(4.0, 2.6, pegTex);
+    placePanel(toolboxPanel, SECTIONS[3].z, SECTIONS[3].side);
+    var toolIcons = [iconWrench, iconBrowser, iconDb, iconFolder];
+    for (var ti=0; ti<4; ti++){
+      var tp = makeIconPlane(0.55, toolIcons[ti]);
+      var tOff = new THREE.Vector3((ti - 1.5) * 0.85, 0.1, 0.12);
+      tOff.applyAxisAngle(new THREE.Vector3(0,1,0), toolboxPanel.rotation.y);
+      tp.position.set(toolboxPanel.position.x + tOff.x, panelY + tOff.y, toolboxPanel.position.z + tOff.z);
+      tp.rotation.y = toolboxPanel.rotation.y;
+      scene.add(tp);
+    }
+
+    // Trophies — shelf
+    var shelfTex = makePanelTexture('trophies', function(ctx, w, h){
+      ctx.save();
+      ctx.font = '30px Caveat, cursive'; ctx.fillStyle = INK; ctx.textAlign='center';
+      ctx.fillText('trophy shelf', w/2, 56);
+      var labels = ['Python Fundamentals', 'C++ Basics', 'HTML & CSS', 'Git & GitHub'];
+      for (var li=0; li<4; li++){
+        var lx = 90 + li*90;
+        sketchyCircle(ctx, lx, 170, 34, { wobble:1.4, color: CORAL, width:2, segments:18 });
+        ctx.font = '13px "Patrick Hand", cursive'; ctx.fillStyle = INK;
+        ctx.fillText(labels[li], lx, 240);
+      }
+      ctx.restore();
+    });
+    var trophyPanel = makeFramedPanel(4.2, 2.6, shelfTex);
+    placePanel(trophyPanel, SECTIONS[4].z, SECTIONS[4].side);
+    var plankGeo = new THREE.BoxGeometry(3.6, 0.12, 0.5);
+    var plank = new THREE.Mesh(plankGeo, new THREE.MeshBasicMaterial({ color: WOOD }));
+    var plankOff = new THREE.Vector3(0, -1.0, 0.35);
+    plankOff.applyAxisAngle(new THREE.Vector3(0,1,0), trophyPanel.rotation.y);
+    plank.position.set(trophyPanel.position.x + plankOff.x, panelY + plankOff.y, trophyPanel.position.z + plankOff.z);
+    plank.rotation.y = trophyPanel.rotation.y;
+    plank.add(new THREE.LineSegments(new THREE.EdgesGeometry(plankGeo), new THREE.LineBasicMaterial({ color: INK })));
+    scene.add(plank);
+
+    // Contact — mailbox
+    var mailTex = makePanelTexture('contact', function(ctx, w, h){
+      ctx.save();
+      ctx.font = '30px Caveat, cursive'; ctx.fillStyle = INK; ctx.textAlign='center';
+      ctx.fillText('say hi', w/2, 56);
+      ctx.font = '20px "Patrick Hand", cursive';
+      ctx.fillText('mail · github · linkedin', w/2, h - 40);
+      ctx.restore();
+    });
+    var mailPanel = makeFramedPanel(3.2, 2.2, mailTex);
+    placePanel(mailPanel, SECTIONS[5].z, SECTIONS[5].side);
+    var mbGroup = new THREE.Group();
+    var postGeo = new THREE.CylinderGeometry(0.05, 0.05, 1.1, 8);
+    var post = new THREE.Mesh(postGeo, new THREE.MeshBasicMaterial({ color: WOOD }));
+    post.position.y = -0.7;
+    post.add(new THREE.LineSegments(new THREE.EdgesGeometry(postGeo), new THREE.LineBasicMaterial({ color: INK })));
+    mbGroup.add(post);
+    var boxGeo = new THREE.BoxGeometry(0.5, 0.32, 0.32);
+    var box = new THREE.Mesh(boxGeo, new THREE.MeshBasicMaterial({ color: CORAL }));
+    box.position.y = -0.02;
+    box.add(new THREE.LineSegments(new THREE.EdgesGeometry(boxGeo), new THREE.LineBasicMaterial({ color: INK })));
+    mbGroup.add(box);
+    var flagGeo = new THREE.BoxGeometry(0.03, 0.14, 0.1);
+    var flag = new THREE.Mesh(flagGeo, new THREE.MeshBasicMaterial({ color: YELLOW }));
+    flag.position.set(0.27, 0.1, 0);
+    flag.add(new THREE.LineSegments(new THREE.EdgesGeometry(flagGeo), new THREE.LineBasicMaterial({ color: INK })));
+    mbGroup.add(flag);
+    var mbOff = new THREE.Vector3(0, 1.0, 0.4);
+    mbOff.applyAxisAngle(new THREE.Vector3(0,1,0), mailPanel.rotation.y);
+    mbGroup.position.set(mailPanel.position.x + mbOff.x, panelY + mbOff.y, mailPanel.position.z + mbOff.z);
+    mbGroup.rotation.y = mailPanel.rotation.y;
+    scene.add(mbGroup);
+
+    /* ---- secret door ---- */
+    doorGroup = new THREE.Group();
+    doorGroup.position.set(-0.9, 0, DOOR_Z);
+    var doorTex = makePanelTexture('secret', function(ctx, w, h){
+      ctx.save();
+      ctx.font = 'bold 160px Caveat, cursive'; ctx.fillStyle = CORAL; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText('?', w/2, h/2 + 10);
+      ctx.restore();
+    });
+    var doorGeo = new THREE.PlaneGeometry(1.8, 3.0);
+    var doorMat = new THREE.MeshBasicMaterial({ map: doorTex, side: THREE.DoubleSide });
+    doorPanel = new THREE.Mesh(doorGeo, doorMat);
+    doorPanel.position.set(0.9, 1.5, 0);
+    var doorEdges = new THREE.LineSegments(new THREE.EdgesGeometry(doorGeo), new THREE.LineBasicMaterial({ color: INK }));
+    doorPanel.add(doorEdges);
+    doorGroup.add(doorPanel);
+    scene.add(doorGroup);
+
+    var endWallGeo = new THREE.PlaneGeometry(CORRIDOR_WIDTH, WALL_HEIGHT);
+    var endWall = new THREE.Mesh(endWallGeo, new THREE.MeshBasicMaterial({ color: PAPER }));
+    endWall.position.set(0, WALL_HEIGHT/2, DOOR_Z - 0.05);
+    scene.add(endWall);
+
+    /* ---- ambient easter eggs ---- */
+    var eggCoffee = makeIconPlane(0.5, iconCoffeeCup, { message: 'fuel level: critical. (send coffee.)' });
+    eggCoffee.position.set(-2.7, 1.5, SECTIONS[1].z - 12);
+    eggCoffee.rotation.y = Math.PI/2;
+    scene.add(eggCoffee);
+
+    var eggSpider = makeIconPlane(0.45, iconSpider, { message: "just a bug. i promise i fixed the rest of them." });
+    eggSpider.position.set(0.6, 3.6, SECTIONS[2].z - 10);
+    scene.add(eggSpider);
+
+    var eggPlane = makeIconPlane(0.5, iconAirplane, { message: "sent that one straight to /dev/null.", flyAway:true });
+    eggPlane.position.set(2.4, 2.0, SECTIONS[3].z - 12);
+    eggPlane.rotation.y = -Math.PI/2;
+    scene.add(eggPlane);
+    flyingProps.push(eggPlane);
+
+    var eggGit = makeIconPlane(0.4, iconGitBranch, { message: 'main ← you are here' });
+    eggGit.position.set(-2.7, 1.2, SECTIONS[4].z - 12);
+    eggGit.rotation.y = Math.PI/2;
+    scene.add(eggGit);
+
+    /* ---- Nib the pencil ---- */
+    nib = new THREE.Group();
+    var bodyGeo = new THREE.CylinderGeometry(0.13, 0.13, 0.85, 6);
+    var body = new THREE.Mesh(bodyGeo, new THREE.MeshBasicMaterial({ color: YELLOW }));
+    body.add(new THREE.LineSegments(new THREE.EdgesGeometry(bodyGeo), new THREE.LineBasicMaterial({ color: INK })));
+    nib.add(body);
+
+    var ferruleGeo = new THREE.CylinderGeometry(0.14, 0.14, 0.1, 6);
+    var ferrule = new THREE.Mesh(ferruleGeo, new THREE.MeshBasicMaterial({ color: '#c7c7c7' }));
+    ferrule.position.y = 0.475;
+    ferrule.add(new THREE.LineSegments(new THREE.EdgesGeometry(ferruleGeo), new THREE.LineBasicMaterial({ color: INK })));
+    nib.add(ferrule);
+
+    var eraserGeo = new THREE.CylinderGeometry(0.13, 0.13, 0.18, 6);
+    var eraser = new THREE.Mesh(eraserGeo, new THREE.MeshBasicMaterial({ color: '#E88A9A' }));
+    eraser.position.y = 0.615;
+    eraser.add(new THREE.LineSegments(new THREE.EdgesGeometry(eraserGeo), new THREE.LineBasicMaterial({ color: INK })));
+    nib.add(eraser);
+
+    var tipGeo = new THREE.ConeGeometry(0.13, 0.28, 6);
+    var tip = new THREE.Mesh(tipGeo, new THREE.MeshBasicMaterial({ color: '#DDBB88' }));
+    tip.position.y = -0.565;
+    tip.add(new THREE.LineSegments(new THREE.EdgesGeometry(tipGeo), new THREE.LineBasicMaterial({ color: INK })));
+    nib.add(tip);
+
+    var graphiteGeo = new THREE.ConeGeometry(0.03, 0.09, 6);
+    var graphite = new THREE.Mesh(graphiteGeo, new THREE.MeshBasicMaterial({ color: INK }));
+    graphite.position.y = -0.74;
+    nib.add(graphite);
+
+    openTex = makeFaceTexture(false);
+    closedTex = makeFaceTexture(true);
+    nibFaceMat = new THREE.MeshBasicMaterial({ map: openTex, transparent: true, side: THREE.DoubleSide, depthWrite:false });
+    var faceGeo = new THREE.PlaneGeometry(0.34, 0.34);
+    nibFace = new THREE.Mesh(faceGeo, nibFaceMat);
+    nibFace.position.set(0, 0.05, 0.135);
+    nib.add(nibFace);
+
+    nib.position.set(0, EYE_HEIGHT, 6);
+    scene.add(nib);
+
+    /* ---- click / hover handling ---- */
+    renderer.domElement.addEventListener('click', onCanvasClick);
+    if (!isTouch){
+      renderer.domElement.addEventListener('mousemove', onCanvasHover);
+      window.addEventListener('mousemove', onWindowMouseMove);
+    }
+    window.addEventListener('resize', onResize);
+  }
+
+  function onWindowMouseMove(e){
+    mouseNX = (e.clientX / window.innerWidth) * 2 - 1;
+    mouseNY = (e.clientY / window.innerHeight) * 2 - 1;
+  }
+
+  function onCanvasHover(e){
+    var rect = renderer.domElement.getBoundingClientRect();
+    mouseVec.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    mouseVec.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(mouseVec, camera);
+    var hits = raycaster.intersectObjects(clickableObjects, false);
+    renderer.domElement.style.cursor = hits.length ? 'pointer' : 'default';
+  }
+
+  function onCanvasClick(e){
+    var rect = renderer.domElement.getBoundingClientRect();
+    mouseVec.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    mouseVec.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(mouseVec, camera);
+    var hits = raycaster.intersectObjects(clickableObjects, false);
+    if (hits.length){
+      var obj = hits[0].object;
+      if (obj.userData.message) showEgg(obj.userData.message);
+      if (obj.userData.flyAway && !obj.userData.flying){
+        obj.userData.flying = true;
+        obj.userData.flyStart = clock.getElapsedTime();
+        var idx = clickableObjects.indexOf(obj);
+        if (idx > -1) clickableObjects.splice(idx, 1);
+      }
+    }
+  }
+
+  function onResize(){
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+
+  /* ================================================================
+     7. PER-FRAME UPDATE
+  ================================================================= */
+  function getProgress(){
+    var doc = document.documentElement;
+    var max = doc.scrollHeight - window.innerHeight;
+    if (max <= 0) return 0;
+    return Math.min(1, Math.max(0, window.scrollY / max));
+  }
+
+  function updateNib(dt, progress, idxFloat){
+    var camIdx = Math.floor(idxFloat);
+    if (camIdx + 1 > nibIndex && nibIndex < SECTIONS.length - 1){
+      nibIndex = Math.min(camIdx + 1, SECTIONS.length - 1);
+    }
+    var s = SECTIONS[nibIndex];
+    var targetX = s.side === 0 ? 0.9 : s.side * 1.65;
+    var targetZ = s.z + 2.3;
+    var lerpSpeed = reducedMotion ? 0.06 : 0.045;
+    nibPos.x += (targetX - nibPos.x) * lerpSpeed;
+    nibPos.z += (targetZ - nibPos.z) * lerpSpeed;
+    var bob = reducedMotion ? 0 : Math.sin(clock.elapsedTime * 2.2) * 0.09;
+    var wobbleZ = reducedMotion ? 0 : Math.sin(clock.elapsedTime * 1.3) * 0.06;
+    nib.position.set(nibPos.x, EYE_HEIGHT - 0.15 + bob, nibPos.z);
+    nib.rotation.z = wobbleZ;
+    nibFace.lookAt(camera.position);
+
+    if (!reducedMotion){
+      blinkState.timer += dt;
+      if (!blinkState.blinking && blinkState.timer > blinkState.next){
+        blinkState.blinking = true; blinkState.elapsed = 0;
+        nibFaceMat.map = closedTex; nibFaceMat.needsUpdate = true;
+      }
+      if (blinkState.blinking){
+        blinkState.elapsed += dt;
+        if (blinkState.elapsed > 0.14){
+          blinkState.blinking = false; blinkState.timer = 0;
+          blinkState.next = 2 + Math.random() * 3;
+          nibFaceMat.map = openTex; nibFaceMat.needsUpdate = true;
+        }
+      }
+    }
+  }
+
+  function updateFlyingProps(dt){
+    for (var i = 0; i < flyingProps.length; i++){
+      var p = flyingProps[i];
+      if (p.userData.flying){
+        var t = Math.min(1, (clock.getElapsedTime() - p.userData.flyStart) / (reducedMotion ? 0.4 : 1.3));
+        p.position.y += dt * (reducedMotion ? 3 : 1.6);
+        p.position.x += dt * (reducedMotion ? 0 : 1.1);
+        p.material.opacity = 1 - t;
+        p.rotation.z += dt * 2;
+        if (t >= 1) p.visible = false;
+      }
+    }
+  }
+
+  function updateDoor(progress){
+    if (progress > 0.965 && !doorOpened){
+      doorOpened = true;
+      doorGroup.userData.openStart = clock.getElapsedTime();
+    }
+    if (doorOpened){
+      var t = Math.min(1, (clock.getElapsedTime() - doorGroup.userData.openStart) / (reducedMotion ? 0.3 : 1.2));
+      var eased = 1 - Math.pow(1 - t, 3);
+      doorGroup.rotation.y = -eased * (Math.PI / 1.7);
+    }
+  }
+
+  function updateCamera(dt){
+    var progress = getProgress();
+    var idxFloat = progress * NUM_GAPS;
+    var z = -idxFloat * SPACING;
+    var wander = reducedMotion ? 0 : Math.sin(progress * Math.PI * 3) * 1.0;
+    var bob = reducedMotion ? 0 : Math.sin(idxFloat * SPACING * 0.15) * 0.045;
+    camera.position.set(wander, EYE_HEIGHT + bob, z);
+
+    var idx = Math.min(Math.floor(idxFloat) + 1, SECTIONS.length - 1);
+    var segT = idxFloat - Math.floor(idxFloat);
+    var side = SECTIONS[idx] ? SECTIONS[idx].side : 0;
+    var glance = reducedMotion ? 0 : Math.sin(segT * Math.PI) * side * 0.13;
+    var parX = (reducedMotion || isTouch) ? 0 : -mouseNY * 0.07;
+    var parY = (reducedMotion || isTouch) ? 0 : mouseNX * 0.11;
+
+    camera.rotation.set(parX, glance + parY, 0);
+
+    updateNib(dt, progress, idxFloat);
+    updateDoor(progress);
+    updateSideNav(progress);
+
+    if (!welcomeShown && progress > 0.005){
+      welcomeShown = true;
+      setTimeout(function(){ showEgg("hi, i'm Nib — i'll show you around!"); }, 400);
+    }
+  }
+
+  function animate(){
+    requestAnimationFrame(animate);
+    var dt = clock.getDelta();
+    updateCamera(dt);
+    updateFlyingProps(dt);
+    renderer.render(scene, camera);
+  }
+
+  /* ================================================================
+     8. DOM WIRING: side nav, reveal, popup
+  ================================================================= */
+  var navLinks = Array.prototype.slice.call(document.querySelectorAll('.side-nav a'));
+  var stops = Array.prototype.slice.call(document.querySelectorAll('.stop[data-section]'));
+
+  function updateSideNav(progress){
+    var idx = Math.round(progress * NUM_GAPS);
+    var id = SECTIONS[Math.min(idx, SECTIONS.length - 2)] ? SECTIONS[Math.min(idx, SECTIONS.length - 2)].id : 'cover';
+    if (progress < 0.02) id = 'cover';
+    navLinks.forEach(function(a){
+      a.classList.toggle('active', a.getAttribute('data-target') === id);
+    });
+  }
+
+  function setupReveal(){
+    if ('IntersectionObserver' in window){
+      var io = new IntersectionObserver(function(entries){
+        entries.forEach(function(entry){
+          if (entry.isIntersecting){
+            var card = entry.target.querySelector('.card');
+            if (card) card.classList.add('visible');
+          }
+        });
+      }, { threshold: 0.25 });
+      stops.forEach(function(s){ io.observe(s); });
+    } else {
+      document.querySelectorAll('.card').forEach(function(c){ c.classList.add('visible'); });
+    }
+  }
+
+  function setupNavClicks(){
+    navLinks.forEach(function(a){
+      a.addEventListener('click', function(e){
+        e.preventDefault();
+        var target = document.querySelector('.stop[data-section="' + this.getAttribute('data-target') + '"]');
+        if (target) target.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth' });
+      });
+    });
+  }
+
+  var eggPopup = document.getElementById('egg-popup');
+  var eggTimer = null;
+  function showEgg(msg){
+    eggPopup.textContent = msg;
+    eggPopup.classList.add('show');
+    clearTimeout(eggTimer);
+    eggTimer = setTimeout(function(){ eggPopup.classList.remove('show'); }, 3200);
+  }
+
+  /* ================================================================
+     9. INIT
+  ================================================================= */
+  function hideLoader(){
+    var loader = document.getElementById('loading-screen');
+    loader.classList.add('hidden');
+  }
+
+  function init(){
+    setupReveal();
+    setupNavClicks();
+
+    if (!hasWebGL()){
+      document.body.classList.add('no-webgl');
+      hideLoader();
+      return;
+    }
+
+    var fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+    var timeout = new Promise(function(res){ setTimeout(res, 2200); });
+
+    Promise.race([fontsReady, timeout]).then(function(){
+      try{
+        clock = new THREE.Clock();
+        buildScene();
+        animate();
+      } catch(err){
+        document.body.classList.add('no-webgl');
+      }
+      hideLoader();
+    });
+  }
+
+  if (document.readyState === 'complete'){
+    init();
+  } else {
+    window.addEventListener('load', init);
+  }
+
+})();
+</script>
+</body>
+</html>
