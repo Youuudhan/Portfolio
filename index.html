@@ -279,8 +279,8 @@
       <article class="card">
         <span class="tape" aria-hidden="true"></span>
         <p class="eyebrow">01 · Where it started</p>
-        <h2>Origin story</h2>
-        <p>Somewhere between graph-paper margins and glowing terminal windows, I found out I liked making things that actually work. A few years at Geetanjali Institute of Technical Studies later, I walked out with a Computer Science degree — and a habit of turning every idea into a little program first, and a plan second.</p>
+        <h2>Introduction</h2>
+        <p>I have always been fascinated by the process of creating something from nothing. This fascination led me to pursue a degree in Computer Science and Engineering, where I honed my skills in programming and problem-solving.I love the creative process of bringing ideas to life through code.</p>
         <p class="meta">B.Tech · Computer Science &amp; Engineering<br>Geetanjali Institute of Technical Studies, Udaipur — Class of 2026</p>
         <ul class="stamp-list">
           <li>Web Dev</li><li>Open Source</li><li>Competitive Programming</li><li>Artificial Intelligence</li>
@@ -559,7 +559,8 @@
     var w = 512, h = 1024;
     var c = makeCanvas(w, h);
     var ctx = c.getContext('2d');
-    ctx.fillStyle = PAPER; ctx.fillRect(0, 0, w, h);
+    // Make wall base darker than the floor for stronger contrast.
+    ctx.fillStyle = '#D8BFA0'; ctx.fillRect(0, 0, w, h);
     paperGrain(ctx, w, h);
     for (var y = 46; y < h; y += 46){
       sketchyLine(ctx, 26, y, w - 20, y, { wobble: 1.6, passes: 1, color: RULE_BLUE, width: 1.4, segments: 10 });
